@@ -22,7 +22,12 @@ const urlDatabase = {
 
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
-});
+}); // This adds the web page but does not render it with EJS.
+
+app.get('/urls', (req, res) => {
+  const templateVars = {urls: urlDatabase};
+  res.render('urls_index', templateVars);
+}); // New page, rendered with EJS.
 
 //------------/hello
 app.get('/hello', (req, res) => {
