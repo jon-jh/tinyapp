@@ -11,8 +11,6 @@ const generateRandomString = function() {
   return Math.random().toString(36).substring(2, 8);
 };
 
-
-
 //init server
 app.listen(port, () => {
   console.log(`The example app is listning on port ${port}`);
@@ -35,7 +33,8 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-app.post("/urls", (req, res) => {
+app.post("/urls", (req, res) => {// This means when this form is submitted, it will make a request to POST / urls, and the body will contain one URL - encoded name - value pair with the name longURL.
+
   const longURL = req.body.longURL;
   // For the key-value pairs in urlDatabase, req.body.longURL = value, id = key.
   // req.body.longURL: Require the data posted in the body of longURL.
@@ -44,24 +43,21 @@ app.post("/urls", (req, res) => {
   urlDatabase[id] = longURL;
   // JavaScript adds a new entry to the urlDatabase object with id as the key and longURL as the value. If the key id already exists in the object, it will update the value associated with that key.
 
-
-
-
-  console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
-
-
-
-
+  res.redirect(`/urls/${id}`); // Since everything above is done, redirect to the route parameter :id
 });
-// This means when this form is submitted, it will make a request to POST / urls, and the body will contain one URL - encoded name - value pair with the name longURL.
 
-//----------/urls/new
+//----------/urls/new - page to add a new URL to be shortened. most general in the order so comes first.
 app.get('/urls/new', (req, res) => {
   res.render('urls_new');
 });
 
-//----------/urls/:id
+//----------/u/:id - redirects a request to a shortened url to the actual longURL from the database. more specific than the next.
+app.get('/u/:id', (req, res) => {
+  const longURL = urlDatabase[req.params.id];
+  res.redirect(longURL);
+});
+
+//----------/urls/:id - route parameter for all / any 'id', so it is more general and should come last in the order.
 app.get('/urls/:id', (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render('urls_show', templateVars);
@@ -85,7 +81,6 @@ app.get('/urls.json', (req, res) => {
 app.get('/hello', (req, res) => {
   res.send('<html><body>Hello <b>World</b>, this is an HTML test. <body><html>\n');
 });
-
 
 
 /*----------clarification notes
