@@ -6,9 +6,9 @@ const port = 8080;
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 
-
 //generate 6 character string
 function generateRandomString() { }
+
 
 
 //init server
@@ -22,10 +22,12 @@ const urlDatabase = {
 };
 
 
-//pages rendered with EJS
 
+//PAGES RENDERED WITH EJS
 
-//---/urls
+// We must add routes that are not route parameters (eg. urls/:id) before / above that route parameter.
+
+//----------/urls
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render('urls_index', templateVars);
@@ -35,45 +37,41 @@ app.post("/urls", (req, res) => {
   console.log(req.body); // Log the POST request body to the console
   res.send("Ok"); // Respond with 'Ok' (we will replace this)
 });
+// This means when this form is submitted, it will make a request to POST / urls, and the body will contain one URL - encoded name - value pair with the name longURL.
 
-//---/urls/new
+//----------/urls/new
 app.get('/urls/new', (req, res) => {
   res.render('urls_new');
 });
 
-//This means when this form is submitted, it will make a request to POST / urls, and the body will contain one URL - encoded name - value pair with the name longURL.
-
-//We must add routes that are not route parameters (eg. urls/:id) before / above the route parameter.
-
-//---/urls/:id
+//----------/urls/:id
 app.get('/urls/:id', (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render('urls_show', templateVars);
 });
 
 
-//pages not EJS rendered
 
+//PAGES NOT EJS RENDERED
 
-//---home page---/localhost:8080
+//----------localhost:8080/
 app.get('/', (req, res) => {
   res.send('Hello there!');
 });
 
-
-//---/urls.json
+//----------/urls.json
 app.get('/urls.json', (req, res) => {
   res.json(urlDatabase);
 });
 
-
-//---/hello
+//----------/hello
 app.get('/hello', (req, res) => {
   res.send('<html><body>Hello <b>World</b>, this is an HTML test. <body><html>\n');
 });
 
 
-/*clarification notes
+
+/*----------clarification notes
 
 - After our browser renders our new URL form, the user populates the form with a longURL and presses submit.
 - Our browser sends a POST request to our server.
@@ -85,6 +83,5 @@ HTTP  Method	CRUD  Action
       POST	        Create
       PUT	          Update
       DELETE	      Delete
-
 */
 
