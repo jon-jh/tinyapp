@@ -7,7 +7,9 @@ app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 
 //generate 6 character string
-function generateRandomString() { }
+const generateRandomString = function() {
+  return Math.random().toString(36).substring(2, 8);
+};
 
 
 
@@ -34,8 +36,23 @@ app.get('/urls', (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
+  const longURL = req.body.longURL;
+  // For the key-value pairs in urlDatabase, req.body.longURL = value, id = key.
+  // req.body.longURL: Require the data posted in the body of longURL.
+  const id = generateRandomString();
+  // now the id is a random number with the value being the longURL.
+  urlDatabase[id] = longURL;
+  // JavaScript adds a new entry to the urlDatabase object with id as the key and longURL as the value. If the key id already exists in the object, it will update the value associated with that key.
+
+
+
+
   console.log(req.body); // Log the POST request body to the console
   res.send("Ok"); // Respond with 'Ok' (we will replace this)
+
+
+
+
 });
 // This means when this form is submitted, it will make a request to POST / urls, and the body will contain one URL - encoded name - value pair with the name longURL.
 
