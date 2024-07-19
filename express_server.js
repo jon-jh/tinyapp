@@ -11,7 +11,7 @@ const generateRandomString = function() {
   return Math.random().toString(36).substring(2, 8);
 };
 
-//  Init server. homepage: localhost:8080
+//  Init server. homepage: localhost:8080/urls
 app.listen(port, () => {
   console.log(`The example app is listning on port ${port}`);
 });
@@ -65,10 +65,15 @@ app.get('/urls/:id', (req, res) => {
   res.render('urls_show', templateVars);
 });
 
-//  /urls/:id - POST ROUTE (Identical to above .get)
+//  /urls/:id - POST ROUTE
 app.post('/urls/:id', (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
-  res.render('urls_show', templateVars);
+  const id = req.params.id;
+  const longURL = req.body.longURL;
+  if (urlDatabase[id]) {
+    urlDatabase[id] = longURL;
+  }
+
+  res.redirect('/urls');
 });
 
 //  /urls/:id/delete -POST ROUTE
@@ -77,16 +82,6 @@ app.post('/urls/:id/delete', (req, res) => {
   delete urlDatabase[id]; // delete the URL from the database
   res.redirect('/urls'); // redirect back to the URLs list
 });
-
-//  /urls/:id/edit -POST ROUTE
-app.post('/urls/:id/edit', (req, res) => {
-  const longURL = req.body.longURL;
-  const id = req.params.id;
-  urlDatabase[id] = longURL;
-  res.redirect('/urls'); // redirect back to the URLs list
-});
-
-
 
 //----------PAGES NOT EJS RENDERED
 
