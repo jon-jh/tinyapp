@@ -32,7 +32,7 @@ app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
-
+//----------/urls/ POST ROUTE
 app.post("/urls", (req, res) => {// This means when this form is submitted, it will make a request to POST / urls, and the body will contain one URL - encoded name - value pair with the name longURL.
 
   const longURL = req.body.longURL;
@@ -45,6 +45,7 @@ app.post("/urls", (req, res) => {// This means when this form is submitted, it w
 
   res.redirect(`/urls/${id}`); // Since everything above is done, redirect to the route parameter :id
 });
+
 
 //----------/urls/new - page to add a new URL to be shortened. most general in the order so comes first.
 app.get('/urls/new', (req, res) => {
@@ -61,6 +62,13 @@ app.get('/u/:id', (req, res) => {
 app.get('/urls/:id', (req, res) => {
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render('urls_show', templateVars);
+});
+
+//----------/urls/:id/delete POST ROUTE
+app.post('/urls/:id/delete', (req, res) => {
+  const id = req.params.id;
+  delete urlDatabase[id]; // delete the URL from the database
+  res.redirect('/urls'); // redirect back to the URLs list
 });
 
 
