@@ -11,7 +11,7 @@ const generateRandomString = function() {
   return Math.random().toString(36).substring(2, 8);
 };
 
-//  Init server. homepage: localhost:8080/
+//  Init server. homepage: localhost:8080
 app.listen(port, () => {
   console.log(`The example app is listning on port ${port}`);
 });
@@ -21,19 +21,16 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com",
 };
 
+/*----------PAGES RENDERED WITH EJS
+  We must add routes that are not route parameters (eg. urls/:id) before / above their corresponding route parameter.
 
-//  PAGES RENDERED WITH EJS
-//  We must add routes that are not route parameters (eg. urls/:id) before / above their corresponding route parameter.
-
-//  /urls -Displays current URLs.
-
+//  /urls -Displays current URLs. */
 app.get('/urls', (req, res) => {
   const templateVars = { urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
 
 //  /urls -POST ROUTE
-
 app.post("/urls", (req, res) => {// When this form is submitted (button is pressed) it will make a request to POST /urls, and the response body  will contain one encoded key:value pair with the id and longURL.
 
   const longURL = req.body.longURL;
@@ -74,9 +71,17 @@ app.post('/urls/:id/delete', (req, res) => {
   res.redirect('/urls'); // redirect back to the URLs list
 });
 
+//  /urls/:id/edit -POST ROUTE
+app.post('/urls/:id/edit', (req, res) => {
+  const longURL = req.body.longURL;
+  const id = req.params.id;
+  urlDatabase[id] = longURL;
+  res.redirect('/urls'); // redirect back to the URLs list
+});
 
 
-//PAGES NOT EJS RENDERED
+
+//----------PAGES NOT EJS RENDERED
 
 //  localhost:8080/
 app.get('/', (req, res) => {
