@@ -1,10 +1,14 @@
+
 const express = require('express');
 const app = express();
 const port = 8080;
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
 
 //  Set up template engine (view folder) and urlencoded option for allowing POST data to be read(like form submission on the website.)
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
+
 
 //  Generate 6 character string.
 const generateRandomString = function() {
@@ -26,7 +30,7 @@ const urlDatabase = {
 
 //  /urls -Displays current URLs. */
 app.get('/urls', (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
 
@@ -57,11 +61,17 @@ app.post("/urls", (req, res) => {// When this form is submitted (button is press
 
 //  /urls/new -Allows a new URL to be shortened.
 app.get('/urls/new', (req, res) => {
-  res.render('urls_new');
+  const templateVars = {
+    username: req.cookies["username"]
+  };
+  res.render('urls_new', templateVars);
 });
 
 //  /u/:id    -Redirects a request for the shortened url to the matching longURL in the database.
 app.get('/u/:id', (req, res) => {
+  const templateVars = {
+    username: req.cookies["username"]
+  };
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
@@ -69,7 +79,7 @@ app.get('/u/:id', (req, res) => {
 
 //  /urls/:id -Route parameter for any & all 'id'.
 app.get('/urls/:id', (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { username: req.cookies["username"], id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render('urls_show', templateVars);
 });
 
@@ -93,20 +103,20 @@ app.post('/urls/:id/delete', (req, res) => {
 
 //----------PAGES NOT EJS RENDERED
 
-//  localhost:8080/
-app.get('/', (req, res) => {
-  res.send('Hello there!');
-});
+// //  localhost:8080/
+// app.get('/', (req, res) => {
+//   res.send('Hello there!');
+// });
 
-//  /urls.json
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
-});
+// //  /urls.json
+// app.get('/urls.json', (req, res) => {
+//   res.json(urlDatabase);
+// });
 
-//  /hello
-app.get('/hello', (req, res) => {
-  res.send('<html><body>Hello <b>World</b>, this is an HTML test. <body><html>\n');
-});
+// //  /hello
+// app.get('/hello', (req, res) => {
+//   res.send('<html><body>Hello <b>World</b>, this is an HTML test. <body><html>\n');
+// });
 
 
 /*----------End Notes
