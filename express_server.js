@@ -69,9 +69,7 @@ app.get('/urls/new', (req, res) => {
 
 //  /u/:id    -Redirects a request for the shortened url to the matching longURL in the database.
 app.get('/u/:id', (req, res) => {
-  const templateVars = {
-    username: req.cookies["username"]
-  };
+
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
