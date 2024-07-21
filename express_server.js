@@ -30,6 +30,14 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
+//  /login -POST ROUTE
+app.post('/login', (req, res) => {
+  const { username } = req.body;
+
+  res.cookie('username', username,); // Used by username form found in _header partial.
+  res.redirect('/urls');
+});
+
 //  /urls -POST ROUTE
 app.post("/urls", (req, res) => {// When this form is submitted (button is pressed) it will make a request to POST /urls, and the response body  will contain one encoded key:value pair with the id and longURL.
 
