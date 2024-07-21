@@ -42,6 +42,13 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
+//  /logout -POST ROUTE
+app.post('/logout', (req, res) => {
+  res.clearCookie('username'); //clear the 'username' cookie
+  res.redirect('/urls'); //redirect to /urls for now
+});
+
+
 //  /urls -POST ROUTE
 app.post("/urls", (req, res) => {// When this form is submitted (button is pressed) it will make a request to POST /urls, and the response body  will contain one encoded key:value pair with the id and longURL.
 
