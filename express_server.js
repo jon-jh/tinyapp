@@ -5,43 +5,57 @@ const port = 8080;
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
-//  Set up template engine (view folder) and urlencoded option for allowing POST data to be read(like form submission on the website.)
+//  Set up template engine (view folder) and urlencoded option for allowing     POST data to be read(like form submission on the website.)
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
-
-
-//  Generate 6 character string.
-const generateRandomString = function() {
-  return Math.random().toString(36).substring(2, 8);
-};
 
 //  Init server. homepage: localhost:8080/urls
 app.listen(port, () => {
   console.log(`The example app is listning on port ${port}`);
 });
 
+//  Generate 6 character string.
+const generateRandomString = function() {
+  return Math.random().toString(36).substring(2, 8);
+};
+
+//  URL Object Database
 const urlDatabase = {
   b2xVn2: "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com",
 };
 
-/*----------PAGES RENDERED WITH EJS
-  We must add routes that are not route parameters (eg. urls/:id) before / above their corresponding route parameter.
+//  Users Object Database
+const users = {};
 
-//  /urls -Displays current URLs. */
-app.get('/urls', (req, res) => {
-  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
-  res.render('urls_index', templateVars);
-});
+//  Add New User To Database Function
+const register = (email, password) => {
+  const id = generateRandomString();
+  users[id] = {
+    id,
+    email,
+    password
+  };
+  return id;
+};
 
-//  /register
+/*--EJS RENDERED PAGES--*/
+
+//  /register ( get / render route )
 app.get('/register', (req, res) => {
   const templateVars = { username: req.cookies["username"], urls: urlDatabase };
   res.render('register', templateVars);
 });
 
+//  /register ( post route )
+app.post('/register', (req, res) => {
+  const { email, password } = req.body;
+  id = register(email, password);
+  res.cookie('user_id', id);
+  res.redirect('/urls');
+});
 
-//  /login -POST ROUTE
+//  /login ( post route )
 app.post('/login', (req, res) => {
   const { username } = req.body;
 
@@ -49,14 +63,19 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
-//  /logout -POST ROUTE
+//  /logout ( post route )
 app.post('/logout', (req, res) => {
   res.clearCookie('username'); //clear the 'username' cookie
   res.redirect('/urls'); //redirect to /urls for now
 });
 
+//  /urls ( get / render route ) -Displays current URLs.
+app.get('/urls', (req, res) => {
+  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  res.render('urls_index', templateVars);
+});
 
-//  /urls -POST ROUTE
+//  /urls ( post route )
 app.post("/urls", (req, res) => {// When this form is submitted (button is pressed) it will make a request to POST /urls, and the response body  will contain one encoded key:value pair with the id and longURL.
 
   const longURL = req.body.longURL;
@@ -73,7 +92,7 @@ app.post("/urls", (req, res) => {// When this form is submitted (button is press
 });
 
 
-//  /urls/new -Allows a new URL to be shortened.
+//  /urls/new ( get / render route ) -Allows a new URL to be shortened.
 app.get('/urls/new', (req, res) => {
   const templateVars = {
     username: req.cookies["username"]
@@ -81,7 +100,7 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new', templateVars);
 });
 
-//  /u/:id    -Redirects a request for the shortened url to the matching longURL in the database.
+//  /u/:id ( get / render route )    -Redirects a request for the shortened url to the matching longURL in the database.
 app.get('/u/:id', (req, res) => {
 
   const longURL = urlDatabase[req.params.id];
@@ -89,13 +108,13 @@ app.get('/u/:id', (req, res) => {
 });
 
 
-//  /urls/:id -Route parameter for any & all 'id'.
+//  /urls/:id ( get / render route ) -Route parameter for any & all 'id'.
 app.get('/urls/:id', (req, res) => {
   const templateVars = { username: req.cookies["username"], id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render('urls_show', templateVars);
 });
 
-//  /urls/:id - POST ROUTE
+//  /urls/:id ( post route )
 app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
   const longURL = req.body.longURL;
@@ -106,14 +125,14 @@ app.post('/urls/:id', (req, res) => {
   res.redirect('/urls');
 });
 
-//  /urls/:id/delete -POST ROUTE
+//  /urls/:id/delete ( post route )
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id]; // delete the URL from the database
   res.redirect('/urls'); // redirect back to the URLs list
 });
 
-//----------PAGES NOT EJS RENDERED
+/*--PAGES NOT EJS RENDERED--*/
 
 // //  localhost:8080/
 // app.get('/', (req, res) => {
