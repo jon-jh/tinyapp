@@ -34,6 +34,13 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
+//  /register
+app.get('/register', (req, res) => {
+  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  res.render('register', templateVars);
+});
+
+
 //  /login -POST ROUTE
 app.post('/login', (req, res) => {
   const { username } = req.body;
@@ -126,10 +133,8 @@ app.post('/urls/:id/delete', (req, res) => {
 
 /*----------End Notes
 
-- After our browser renders our new URL form, the user populates the form with a longURL and presses submit.
-- Our browser sends a POST request to our server.
-- Our server logs the request body to the console, then responds with 200 OK.
-- Our browser renders the "Ok" message.
+- a GET route is where the HTML webpage is created / RENDERED.
+- a POST route is where the HTML webpage goes when some button is clicked and information needs to be updated or accessed from the server.
 
 HTTP  Method	CRUD  Action
       GET	          Read

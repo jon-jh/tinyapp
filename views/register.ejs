@@ -1,0 +1,36 @@
+<!--Copy pasted header and formatting portion from urls_index page. On /register get route, templateVars is also rendered for this to work.-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+    integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous" />
+  <title>TinyApp</title>
+</head>
+
+<body>
+  <!-- Add include ejs statement for the partial header-->
+  <%- include('partials/_header') %>
+    <!-- End header insertion section-->
+
+    <h1>Register</h1>
+    <form action="/register" method="POST">
+      <div>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+      </div>
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <div>
+        <button type="submit">Register</button>
+      </div>
+    </form>
+</body>
+
+</html>
