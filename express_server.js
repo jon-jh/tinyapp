@@ -43,35 +43,40 @@ const register = (email, password) => {
 
 //  /register ( get / render route )
 app.get('/register', (req, res) => {
-  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  const user_id = req.cookies['user_id'];
+  const user = users[user_id];
+  const templateVars = { user, urls: urlDatabase };
   res.render('register', templateVars);
 });
 
 //  /register ( post route )
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
-  id = register(email, password);
+  const id = register(email, password);
   res.cookie('user_id', id);
+  console.log('Registered user_id:', id);
   res.redirect('/urls');
 });
 
 //  /login ( post route )
 app.post('/login', (req, res) => {
-  const { username } = req.body;
+  const { email, password } = req.body;
 
-  res.cookie('username', username,); // Used by username form found in _header partial.
+  res.cookie('user_id', id); // Used by username form found in _header partial.
   res.redirect('/urls');
 });
 
 //  /logout ( post route )
 app.post('/logout', (req, res) => {
-  res.clearCookie('username'); //clear the 'username' cookie
+  res.clearCookie('user_id'); //clear the 'username' cookie
   res.redirect('/urls'); //redirect to /urls for now
 });
 
 //  /urls ( get / render route ) -Displays current URLs.
 app.get('/urls', (req, res) => {
-  const templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  const user_id = req.cookies['user_id'];
+  const user = users[user_id];
+  const templateVars = { user, urls: urlDatabase };
   res.render('urls_index', templateVars);
 });
 
@@ -94,15 +99,14 @@ app.post("/urls", (req, res) => {// When this form is submitted (button is press
 
 //  /urls/new ( get / render route ) -Allows a new URL to be shortened.
 app.get('/urls/new', (req, res) => {
-  const templateVars = {
-    username: req.cookies["username"]
-  };
+  const user_id = req.cookies['user_id'];
+  const user = users[user_id];
+  const templateVars = { user };
   res.render('urls_new', templateVars);
 });
 
 //  /u/:id ( get / render route )    -Redirects a request for the shortened url to the matching longURL in the database.
 app.get('/u/:id', (req, res) => {
-
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
@@ -110,7 +114,9 @@ app.get('/u/:id', (req, res) => {
 
 //  /urls/:id ( get / render route ) -Route parameter for any & all 'id'.
 app.get('/urls/:id', (req, res) => {
-  const templateVars = { username: req.cookies["username"], id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const user_id = req.cookies['user_id'];
+  const user = users[user_id];
+  const templateVars = { user, id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render('urls_show', templateVars);
 });
 
