@@ -39,6 +39,15 @@ const register = (email, password) => {
   return id;
 };
 
+// (Global)Function check email or password are empty before register
+function validateEmailPassword(email, password) {
+  return email && password;
+}
+
+// (Global)Function to check if email is already in use before register
+function isEmailInUse(email) {
+  return Object.values(users).some(user => user.email === email);
+}
 
 
 // (Route Handlers)
@@ -53,6 +62,30 @@ app.get('/register', (req, res) => {
 // POST /register
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
+
+  if (!validateEmailPassword(email, password)) {
+    return res.status(400).send(`
+        <p>The fields can not be empty. Redirecting!</p>
+        <script>
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 4000);
+        </script>
+      `);
+  }
+
+  // Check if email is already in use
+  if (isEmailInUse(email)) {
+    return res.status(400).send(`
+        <p>That email is already registered. Redirecting!</p>
+        <script>
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 4000);
+        </script>
+      `);
+  }
+
   const id = register(email, password);
   res.cookie('user_id', id);
   console.log('Registered user_id:', id);
