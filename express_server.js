@@ -5,7 +5,8 @@ const port = 8080;
 const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 
-//  Set up template engine (view folder) and urlencoded option for allowing     POST data to be read(like form submission on the website.)
+//  Set up template engine (views folder) and urlencoded option for allowing POST data to be read.
+
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 
@@ -41,7 +42,7 @@ const register = (email, password) => {
 
 /*--EJS RENDERED PAGES--*/
 
-//  /register ( get / render route )
+//  GET /register
 app.get('/register', (req, res) => {
   const user_id = req.cookies['user_id'];
   const user = users[user_id];
@@ -49,7 +50,7 @@ app.get('/register', (req, res) => {
   res.render('register', templateVars);
 });
 
-//  /register ( post route )
+//  POST /register
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
   const id = register(email, password);
@@ -58,7 +59,7 @@ app.post('/register', (req, res) => {
   res.redirect('/urls');
 });
 
-//  /login ( post route )
+//  POST /login
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -66,13 +67,13 @@ app.post('/login', (req, res) => {
   res.redirect('/urls');
 });
 
-//  /logout ( post route )
+//  POST /logout
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id'); //clear the 'username' cookie
   res.redirect('/urls'); //redirect to /urls for now
 });
 
-//  /urls ( get / render route ) -Displays current URLs.
+//  GET /urls -Displays saved URLs.
 app.get('/urls', (req, res) => {
   const user_id = req.cookies['user_id'];
   const user = users[user_id];
@@ -80,7 +81,7 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-//  /urls ( post route )
+//  POST /urls
 app.post("/urls", (req, res) => {// When this form is submitted (button is pressed) it will make a request to POST /urls, and the response body  will contain one encoded key:value pair with the id and longURL.
 
   const longURL = req.body.longURL;
@@ -96,8 +97,7 @@ app.post("/urls", (req, res) => {// When this form is submitted (button is press
   res.redirect(`/urls/${id}`);
 });
 
-
-//  /urls/new ( get / render route ) -Allows a new URL to be shortened.
+//  GET /urls/new
 app.get('/urls/new', (req, res) => {
   const user_id = req.cookies['user_id'];
   const user = users[user_id];
@@ -105,14 +105,14 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new', templateVars);
 });
 
-//  /u/:id ( get / render route )    -Redirects a request for the shortened url to the matching longURL in the database.
+//  GET /u/:id -Redirects a request for the shortened url to the matching longURL in the database.
 app.get('/u/:id', (req, res) => {
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
 });
 
 
-//  /urls/:id ( get / render route ) -Route parameter for any & all 'id'.
+//  GET /urls/:id -Route parameter for any & all 'id'.
 app.get('/urls/:id', (req, res) => {
   const user_id = req.cookies['user_id'];
   const user = users[user_id];
@@ -120,51 +120,19 @@ app.get('/urls/:id', (req, res) => {
   res.render('urls_show', templateVars);
 });
 
-//  /urls/:id ( post route )
+//  POST /urls/:id
 app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
   const longURL = req.body.longURL;
   if (urlDatabase[id]) {
     urlDatabase[id] = longURL;
   }
-
   res.redirect('/urls');
 });
 
-//  /urls/:id/delete ( post route )
+//  POST /urls/:id/delete
 app.post('/urls/:id/delete', (req, res) => {
   const id = req.params.id;
   delete urlDatabase[id]; // delete the URL from the database
   res.redirect('/urls'); // redirect back to the URLs list
 });
-
-/*--PAGES NOT EJS RENDERED--*/
-
-// //  localhost:8080/
-// app.get('/', (req, res) => {
-//   res.send('Hello there!');
-// });
-
-// //  /urls.json
-// app.get('/urls.json', (req, res) => {
-//   res.json(urlDatabase);
-// });
-
-// //  /hello
-// app.get('/hello', (req, res) => {
-//   res.send('<html><body>Hello <b>World</b>, this is an HTML test. <body><html>\n');
-// });
-
-
-/*----------End Notes
-
-- a GET route is where the HTML webpage is created / RENDERED.
-- a POST route is where the HTML webpage goes when some button is clicked and information needs to be updated or accessed from the server.
-
-HTTP  Method	CRUD  Action
-      GET	          Read
-      POST	        Create
-      PUT	          Update
-      DELETE	      Delete
-*/
-
