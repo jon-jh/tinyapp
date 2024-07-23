@@ -1,20 +1,18 @@
-/* Setup Libraries for Web Server */
-
-const express = require('express'); // Library that allows developers to code HTTP more simply, runs own code in the background.
-const cookieParser = require('cookie-parser'); // Needed to read cookies.
+// Config
+const express = require('express'); // HTML library.
 const app = express();
 const port = 8080;
 
-app.set('view engine', 'ejs'); // Now we can make HTML pages inside a 'views' folder and route them to our server (this file)
-app.use(express.urlencoded({ extended: true })); // urlencoded allows POST data to be read.
+app.set('view engine', 'ejs');
+app.use(express.urlencoded({ extended: true })); // Allow reading POST data.
+
+const cookieParser = require('cookie-parser'); // Needed to read cookies.
 app.use(cookieParser()); // Set express app to use this library.
 
-
-// Start server. Homepage: localhost:8080/urls
+// Start server.
 app.listen(port, () => {
-  console.log(`The example app is listning on port ${port}`);
+  console.log(`Server is running on port ${port}`);
 });
-
 
 /* Global Vars */
 // Random String Generator

@@ -11,17 +11,19 @@
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
         <td>
           <!--Changing header to say logout when user is logged in. If user is already logged in, replace input field for entering username with a label, like 'logged in as user.' we already have that label, so move it over here instead. If user is already logged in, copy login button and replace with logout. post to logout. use crocodile inputs to write js in html.-->
-<% if (user) { %>
-  <form method="post" action="/logout" style="display: flex; align-items: center;">
-    <label style="margin-left: 10px;">Logged in as '<%= user.email %>'</label>
-    <button type="submit">Logout</button>
-  </form>
-  <% } else { %>
-    <form method="post" action="/login" style="display: flex; align-items: center;">
-      <input class="form-control" type="text" name="username" placeholder="Username" style="margin-right: 10px;">
-      <button type="submit">Login</button>
-    </form>
-    <% } %>
+          <% if (user) { %>
+            <form method="post" action="/logout" style="display: flex; align-items: center;">
+              <label style="margin-left: 10px;">Logged in as '<%= user.email %>' </label>
+              <button type="submit">Logout</button>
+            </form>
+            <% } else { %>
+              <form method="post" action="/login" style="display: flex; align-items: center;">
+                <input class="form-control" type="text" name="username" placeholder="Username"
+                  style="margin-right: 10px;">
+
+                <button type="submit">Login</button>
+              </form>
+              <% } %>
         </td>
       </div>
     </div>
