@@ -72,6 +72,22 @@ app.post('/login', (req, res) => {
   res.cookie('user_id', id);
   console.log('Logged in user_id:', id);
   res.redirect('/urls');
+
+  // app.post('/login', (req, res) => {
+  //   const { email, password } = req.body;
+  //   // Find the user with the given email
+  //   const user = Object.values(users).find(user => user.email === email);
+  //   if (user && user.password === password) {
+  //     // If the user exists and the password is correct, log them in
+  //     res.cookie('user_id', user.id);
+  //     console.log('Logged in user_id:', user.id);
+  //     res.redirect('/urls');
+  //   } else {
+  //     // If the user doesn't exist or the password is incorrect, show an error
+  //     res.status(403).send('Invalid email or password');
+  //   }
+  // });
+
 });
 
 // POST /logout
