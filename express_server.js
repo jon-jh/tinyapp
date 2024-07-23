@@ -68,7 +68,7 @@ app.post('/register', (req, res) => {
         <p>The fields can not be empty. Redirecting!</p>
         <script>
           setTimeout(() => {
-            window.location.href = '/login';
+            window.location.href = '/register';
           }, 4000);
         </script>
       `);
@@ -80,7 +80,7 @@ app.post('/register', (req, res) => {
         <p>That email is already registered. Redirecting!</p>
         <script>
           setTimeout(() => {
-            window.location.href = '/login';
+            window.location.href = '/register';
           }, 4000);
         </script>
       `);
