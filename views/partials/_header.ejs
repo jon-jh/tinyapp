@@ -7,8 +7,10 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
       <div class="navbar-nav">
-        <a class="nav-item nav-link" href="/urls">My URLs</a>
-        <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+        <a class="nav-item nav-link" href="/register">Register</a>
+        <a class="nav-item nav-link" href="/urls/new">Create Short URL</a>
+        <a class="nav-item nav-link" href="/urls">My Short URLs</a>
+
         <td>
           <!--Changing header to say logout when user is logged in. If user is already logged in, replace input field for entering username with a label, like 'logged in as user.' we already have that label, so move it over here instead. If user is already logged in, copy login button and replace with logout. post to logout. use crocodile inputs to write js in html.-->
           <% if (user) { %>
@@ -17,12 +19,13 @@
               <button type="submit">Logout</button>
             </form>
             <% } else { %>
-              <form method="post" action="/login" style="display: flex; align-items: center;">
+              <a class="nav-item nav-link" href="/login">Login</a>
+              <!-- <form method="post" action="/login" style="display: flex; align-items: center;">
                 <input class="form-control" type="text" name="username" placeholder="Username"
                   style="margin-right: 10px;">
 
                 <button type="submit">Login</button>
-              </form>
+              </form> -->
               <% } %>
         </td>
       </div>

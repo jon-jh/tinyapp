@@ -1,0 +1,42 @@
+<!-- Use Emmet Abbreviation ( ! ) Thanks Andy! -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+    integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous" />
+
+  <title>TinyApp</title>
+</head>
+
+</head>
+
+<body>
+  <!-- Add include ejs statement for the partial header-->
+  <%- include('partials/_header') %>
+    <!-- End header insertion section-->
+    <h1>Login</h1>
+    <form action="/login" method="POST">
+      <div>
+        <label for="email">Email:</label>
+        <input type="email" name="email" required>
+      </div>
+      <div>
+        <label for="password">Password:</label>
+        <input type="password" name="password" required>
+      </div>
+      <div>
+        <button type="submit">Login</button>
+      </div>
+    </form>
+    <!--How to console.log the variables available in a template-->
+    <!--non outputting logic-->
+    <% console.log(locals) %>
+      <!--Thanks Andy again-->
+</body>
+
+</html>

@@ -57,17 +57,27 @@ app.post('/register', (req, res) => {
   res.redirect('/urls');
 });
 
+// GET /login
+app.get('/login', (req, res) => {
+  const user_id = req.cookies['user_id'];
+  const user = users[user_id];
+  const templateVars = { user, urls: urlDatabase };
+  res.render('login', templateVars);
+});
+
 // POST /login
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  res.cookie('user_id', id); // Used by username form found in _header partial.
+  const id = register(email, password);
+  res.cookie('user_id', id);
+  console.log('Logged in user_id:', id);
   res.redirect('/urls');
 });
 
 // POST /logout
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id'); //clear the 'username' cookie
-  res.redirect('/urls'); //redirect to /urls for now
+  res.redirect('/urls');
 });
 
 // GET /urls -Displays saved URLs.
