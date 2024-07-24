@@ -33,17 +33,6 @@
         <button type="submit">Login</button>
       </div>
     </form>
-<!--Check that fields are not empty-->
-    <script>document.getElementById('loginForm').addEventListener('submit', function(event) {
-    const email = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value.trim();
-    
-    if (!email || !password) {
-    alert('Both email and password fields are required.');
-    event.preventDefault(); // Prevent form submission
-    }
-    });
-    </script>
 
     <!--How to console.log the variables available in a template-->
     <!--non outputting logic-->

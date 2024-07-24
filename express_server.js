@@ -38,16 +38,15 @@ const register = (email, password) => {
   };
   return id;
 };
-
 // (Global)Function check email or password are empty before register
 function validateEmailPassword(email, password) {
   return email && password;
 }
-
 // (Global)Function to check if email is already in use before register
 function isEmailInUse(email) {
   return Object.values(users).some(user => user.email === email);
 }
+
 
 
 // (Route Handlers)
@@ -103,33 +102,41 @@ app.get('/login', (req, res) => {
 // POST /login
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  try {
-    // Find the user by email
-    const user = Object.values(users).find(user => user.email === email);
-    if (user && user.password === password) {
-      // If the user exists and the password is matching, log them in
-      res.cookie('user_id', user.id);
-      console.log('Logged in user_id:', user.id);
-      res.redirect('/urls');
-    } else {
-      // If the user doesn't exist or the password does not match the user, show an error and redirect. Need to use some HTML here because you cant send multiple responses.
-      res.status(403).send(`
-        <p>Wrong Username or Password. Redirecting!</p>
-        <script>
-          setTimeout(() => {
-            window.location.href = '/login';
-          }, 4000);
-        </script>
-      `);
+
+  // Find the user by email
+  let foundUser = null;
+  for (const user in users) {
+    if (users[user].email === email) {
+      foundUser = users[user];
+      break;
     }
-  } catch (error) {
+  }
+
+  if (foundUser && foundUser.password === password) {
+    // If the user exists and the password is matching, log them in
+    res.cookie('user_id', foundUser.id);
+    console.log('Logged in user_id:', foundUser.id);
+    res.redirect('/protected');
+  } else if (!foundUser || foundUser.password !== password) {
+    // If the user doesn't exist or the password does not match the user, show an error and redirect
+    res.status(403).send(`
+      <p>Wrong Username or Password. Redirecting!</p>
+      <script>
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 4000);
+      </script>
+    `);
+  } else {
+    // Handle unexpected errors
     res.status(500).send('Woopsies');
   }
 });
 
+
 // POST /logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id'); //clear the 'username' cookie
+  res.clearCookie('user_id'); //clear the 'user_id' cookie
   res.redirect('/urls');
 });
 
@@ -195,3 +202,15 @@ app.post('/urls/:id/delete', (req, res) => {
   delete urlDatabase[id]; // delete the URL from the database
   res.redirect('/urls'); // redirect back to the URLs list
 });
+
+// GET /protected - only shows when user is logged in
+app.get('/protected', (req, res) => {
+  console.log(req.cookies.user_id);
+  const userId = req.cookies.user_id;
+  if (!userId) {
+    return res.redirect('/');
+  }
+  const user = users[userId];
+  const templateVars = { user };
+  res.render('protected', templateVars);
+});//From Alvins Class
