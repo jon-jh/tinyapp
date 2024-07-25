@@ -137,7 +137,7 @@ app.post('/login', (req, res) => {
 // POST /logout
 app.post('/logout', (req, res) => {
   res.clearCookie('user_id'); //clear the 'user_id' cookie
-  res.redirect('/urls');
+  res.redirect('/login');
 });
 
 // GET /urls -Displays saved URLs.
@@ -208,7 +208,7 @@ app.get('/protected', (req, res) => {
   console.log(req.cookies.user_id);
   const userId = req.cookies.user_id;
   if (!userId) {
-    return res.redirect('/');
+    return res.redirect('/urls');
   }
   const user = users[userId];
   const templateVars = { user };
