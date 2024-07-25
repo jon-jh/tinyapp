@@ -12,7 +12,7 @@ app.use(cookieParser()); // Set express app to use this library.
 // Start
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
-  console.log('Note that restarting the server does not seem to clear login cookie and can cause issues. If problem, try manually deleting the user_id cookie in the browser or log out before restarting.');
+  console.log('\nNote that restarting the server does not seem to clear login cookie and can cause issues. If problem, try manually deleting the user_id cookie in the browser or log out before restarting.');
 });
 
 
@@ -56,9 +56,6 @@ function loggedIn(req) {
 
 // (Route Handlers)
 
-/* If the user is logged in, GET / login should redirect to GET / urls
-If the user is logged in, GET / register should redirect to GET / urls */
-
 // GET /register
 app.get('/register', (req, res) => {
   if (!loggedIn(req)) {
@@ -68,7 +65,7 @@ app.get('/register', (req, res) => {
     res.render('register', templateVars);
     return;
   }
-  console.log('Debug - Register Clicked but Already Logged In - Redirect');
+  console.log('\nDebug - Register Clicked but Already Logged In - Redirect');
   res.redirect('/urls');
   return;
 });
@@ -102,7 +99,7 @@ app.post('/register', (req, res) => {
 
   const id = register(email, password);
   res.cookie('user_id', id);
-  console.log('Registered user_id:', id);
+  console.log('\nRegistered user_id:', id);
   res.redirect('/urls');
 });
 
@@ -115,7 +112,7 @@ app.get('/login', (req, res) => {
     res.render('login', templateVars);
     return;
   }
-  console.log('Debug - Login Clicked But Already Logged In - Redirect');
+  console.log('\nDebug - Login Clicked But Already Logged In - Redirect');
   res.redirect('/urls');
   return;
 });
@@ -136,7 +133,7 @@ app.post('/login', (req, res) => {
   if (foundUser && foundUser.password === password) {
     // If the user exists and the password is matching, log them in
     res.cookie('user_id', foundUser.id);
-    console.log('Logged in user_id:', foundUser.id);
+    console.log('\nLogged in user_id:', foundUser.id);
     res.redirect('/protected');
   } else if (!foundUser || foundUser.password !== password) {
     // If the user doesn't exist or the password does not match the user, show an error and redirect
@@ -170,7 +167,18 @@ app.get('/urls', (req, res) => {
 });
 
 // POST /urls
-app.post("/urls", (req, res) => {// POST /urls, the response body  will contain one encoded key:value pair with the id and longURL.
+app.post("/urls", (req, res) => {
+
+  // Protected Page - Check for User Login
+
+  const userId = req.cookies.user_id;
+  if (!userId) {
+    res.send('\nUser tried to post but was not logged in. Action was cancelled.');
+    return;
+
+  }
+
+  // POST /urls, the response body  will contain one encoded key:value pair with the id and longURL.
 
   const longURL = req.body.longURL;// For the key:value pairs in urlDatabase, id = key, req.body.longURL = value.
 
@@ -183,28 +191,64 @@ app.post("/urls", (req, res) => {// POST /urls, the response body  will contain 
 
   */
   res.redirect(`/urls/${id}`);
+  return;
 });
 
 // GET /urls/new
 app.get('/urls/new', (req, res) => {
+  if (!loggedIn(req)) {
+    console.log('\nDebug - Tried urls/new but not logged in - Redirect to Login');
+    res.redirect('/login');
+    return;
+  }
   const user_id = req.cookies['user_id'];
   const user = users[user_id];
   const templateVars = { user };
   res.render('urls_new', templateVars);
+  return;
 });
 
 // GET /u/:id -Redirects a request for the shortened url to the matching longURL in the database.
 app.get('/u/:id', (req, res) => {
+  
+  // Check if url exists or not
+  const id = req.params.id;
+  if (!urlDatabase[id]) {
+    res.status(403).send(`
+      <p>Not found in your database. Redirecting!</p>
+      <script>
+        setTimeout(() => {
+          window.location.href = '/urls';
+        }, 4000);
+      </script>
+    `);
+    return;
+  }
   const longURL = urlDatabase[req.params.id];
   res.redirect(longURL);
+  return;
 });
 
 // GET /urls/:id -Route parameter for any & all 'id'.
 app.get('/urls/:id', (req, res) => {
+  // Check if url exists or not
+  const id = req.params.id;
+  if (!urlDatabase[id]) {
+    res.status(403).send(`
+      <p>Not found in your database. Redirecting!</p>
+      <script>
+        setTimeout(() => {
+          window.location.href = '/urls';
+        }, 4000);
+      </script>
+    `);
+    return;
+  }
   const user_id = req.cookies['user_id'];
   const user = users[user_id];
   const templateVars = { user, id: req.params.id, longURL: urlDatabase[req.params.id] };
   res.render('urls_show', templateVars);
+  return;
 });
 
 // POST /urls/:id
@@ -226,7 +270,6 @@ app.post('/urls/:id/delete', (req, res) => {
 
 // GET /protected - only shows when user is logged in
 app.get('/protected', (req, res) => {
-  console.log(req.cookies.user_id);
   const userId = req.cookies.user_id;
   if (!userId) {
     return res.redirect('/urls');
