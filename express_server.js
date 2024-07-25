@@ -12,6 +12,7 @@ app.use(cookieParser()); // Set express app to use this library.
 // Start
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  console.log('Note that restarting the server does not seem to clear login cookie and can cause issues. If problem, try manually deleting the user_id cookie in the browser or log out before restarting.');
 });
 
 
@@ -46,16 +47,30 @@ function validateEmailPassword(email, password) {
 function isEmailInUse(email) {
   return Object.values(users).some(user => user.email === email);
 }
+// (Global)Function check if user is logged in
+function loggedIn(req) {
+  return req.cookies.user_id ? true : false;
+} // returns true or false, by checking if user_id cookie exists. (req.cookies contains all the cookies sent from the client, and (req) lets the function look in the incoming request (req).
 
 
 
 // (Route Handlers)
+
+/* If the user is logged in, GET / login should redirect to GET / urls
+If the user is logged in, GET / register should redirect to GET / urls */
+
 // GET /register
 app.get('/register', (req, res) => {
-  const user_id = req.cookies['user_id'];
-  const user = users[user_id];
-  const templateVars = { user, urls: urlDatabase };
-  res.render('register', templateVars);
+  if (!loggedIn(req)) {
+    const user_id = req.cookies['user_id'];
+    const user = users[user_id];
+    const templateVars = { user, urls: urlDatabase };
+    res.render('register', templateVars);
+    return;
+  }
+  console.log('Debug - Register Clicked but Already Logged In - Redirect');
+  res.redirect('/urls');
+  return;
 });
 
 // POST /register
@@ -93,10 +108,16 @@ app.post('/register', (req, res) => {
 
 // GET /login
 app.get('/login', (req, res) => {
-  const user_id = req.cookies['user_id'];
-  const user = users[user_id];
-  const templateVars = { user, urls: urlDatabase };
-  res.render('login', templateVars);
+  if (!loggedIn(req)) {
+    const user_id = req.cookies['user_id'];
+    const user = users[user_id];
+    const templateVars = { user, urls: urlDatabase };
+    res.render('login', templateVars);
+    return;
+  }
+  console.log('Debug - Login Clicked But Already Logged In - Redirect');
+  res.redirect('/urls');
+  return;
 });
 
 // POST /login
