@@ -23,8 +23,14 @@ const generateRandomString = function() {
 };
 // (Global)URL Database
 const urlDatabase = {
-  b2xVn2: "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com",
+  b6UTxQ: {
+    longURL: "https://www.tsn.ca",
+    nestedObjectID: "rvdedt",
+  },
+  i3BoGr: {
+    longURL: "https://www.google.ca",
+    nestedObjectID: "rvdedt",
+  },
 };
 // (Global)User Database
 const users = {
@@ -162,7 +168,14 @@ app.post('/logout', (req, res) => {
 app.get('/urls', (req, res) => {
   const user_id = req.cookies['user_id'];
   const user = users[user_id];
-  const templateVars = { user, urls: urlDatabase };
+
+  const userFilter = {}; // Loop through the urlDatabase {}
+  for (const shortURL in urlDatabase) { // Within urlDatabase
+    if (urlDatabase[shortURL].nestedObjectID === user_id) { // If found matching ID
+      userFilter[shortURL] = urlDatabase[shortURL]; // Send it to userFilter {}
+    } // userFilter will be an object only containing the logged in users URLs.
+  }
+  const templateVars = { user, urls: userFilter };// render userFilter as urls in the template. So it only will have access to the values from userFilter.
   res.render('urls_index', templateVars);
 });
 
@@ -171,25 +184,21 @@ app.post("/urls", (req, res) => {
 
   // Protected Page - Check for User Login
 
-  const userId = req.cookies.user_id;
-  if (!userId) {
+  const currentUser = req.cookies.user_id;
+  if (!currentUser) {
     res.send('\nUser tried to post but was not logged in. Action was cancelled.');
     return;
-
   }
 
-  // POST /urls, the response body  will contain one encoded key:value pair with the id and longURL.
-
   const longURL = req.body.longURL;// For the key:value pairs in urlDatabase, id = key, req.body.longURL = value.
+  const id = generateRandomString(); // Now the id is a random number with the value being the longURL.
+  // urlDatabase[id] = longURL; (replaced)
+  urlDatabase[id] = {
+    longURL: longURL,
+    nestedObjectID: currentUser // Store the user ID as nestedObjectID
+  };
+  //Note: id is refered to shortURL in other functions, but it is the same due to the structure of the urlDatabase Object (may update later)
 
-  const id = generateRandomString();// Now the id is a random number with the value being the longURL.
-
-  urlDatabase[id] = longURL;
-  /*
-    Adds a new entry to the urlDatabase object with id as the key and longURL
-    as the value.
-
-  */
   res.redirect(`/urls/${id}`);
   return;
 });
@@ -210,7 +219,7 @@ app.get('/urls/new', (req, res) => {
 
 // GET /u/:id -Redirects a request for the shortened url to the matching longURL in the database.
 app.get('/u/:id', (req, res) => {
-  
+
   // Check if url exists or not
   const id = req.params.id;
   if (!urlDatabase[id]) {
@@ -270,11 +279,11 @@ app.post('/urls/:id/delete', (req, res) => {
 
 // GET /protected - only shows when user is logged in
 app.get('/protected', (req, res) => {
-  const userId = req.cookies.user_id;
-  if (!userId) {
+  const currentUser = req.cookies.user_id;
+  if (!currentUser) {
     return res.redirect('/urls');
   }
-  const user = users[userId];
+  const user = users[currentUser];
   const templateVars = { user };
   res.render('protected', templateVars);
 });//From Alvins Class
