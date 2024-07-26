@@ -1,26 +1,25 @@
 // Config
 const express = require('express'); // HTML library.
 const cookieParser = require('cookie-parser'); // Needed to read cookies.
+const bcrypt = require("bcryptjs");
 const app = express();
 const port = 8080;
 app.use(cookieParser()); // Set express app to use this library.
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true })); // Allow reading POST data.
 
-
-
-
 // Start
 app.listen(port, () => {
-  console.log(`Server running on port ${port}. \nNOTE: restarting does not clear the login cookie. Try manually deleting user_id cookie if problem.\n`);
+  console.log(`Server running on port ${port}. \nNote - restarting does not delete user_id cookie and may cause issues unless deleted or logged out.\n`);
 });
-
 
 
 // (Global)Random String Generator
 const generateRandomString = function() {
   return Math.random().toString(36).substring(2, 8);
 };
+
+
 // (Global)URL Database
 const urlDatabase = {
   b6UTxQ: {
@@ -32,35 +31,47 @@ const urlDatabase = {
     nestedObjectID: "rvdedt",
   },
 };
+
+
 // (Global)User Database
-const users = {
-};
-// (Global)Function Add New User
+const users = {};
+
+
+// (Global)Function register user/password and encrypt the password here at the source using hashSync.
 const register = (email, password) => {
   const id = generateRandomString();
+  const hashedPassword = bcrypt.hashSync(password, 10); // use hashSync
   users[id] = {
     id,
     email,
-    password
+    password: hashedPassword
   };
+  // Encrypted password check
+  console.log(users);
   return id;
 };
+
+
 // (Global)Function check email or password are empty before register
 function validateEmailPassword(email, password) {
   return email && password;
 }
+
+
 // (Global)Function to check if email is already in use before register
 function isEmailInUse(email) {
   return Object.values(users).some(user => user.email === email);
 }
+
+
 // (Global)Function check if user is logged in
 function loggedIn(req) {
   return req.cookies.user_id ? true : false;
 } // returns true or false, by checking if user_id cookie exists. (req.cookies contains all the cookies sent from the client, and (req) lets the function look in the incoming request (req).
 
 
-
 // (Route Handlers)
+
 
 // GET /register
 app.get('/register', (req, res) => {
@@ -75,6 +86,7 @@ app.get('/register', (req, res) => {
   res.redirect('/urls');
   return;
 });
+
 
 // POST /register
 app.post('/register', (req, res) => {
@@ -109,6 +121,7 @@ app.post('/register', (req, res) => {
   res.redirect('/urls');
 });
 
+
 // GET /login
 app.get('/login', (req, res) => {
   if (!loggedIn(req)) {
@@ -123,6 +136,7 @@ app.get('/login', (req, res) => {
   return;
 });
 
+
 // POST /login
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
@@ -136,8 +150,8 @@ app.post('/login', (req, res) => {
     }
   }
 
-  if (foundUser && foundUser.password === password) {
-    // If the user exists and the password is matching, log them in
+  if (foundUser && bcrypt.compareSync(password, foundUser.password)) {
+    // If the user exists and the password is matching the bcrypt password, log them in, create a user_id cookie for them.
     res.cookie('user_id', foundUser.id);
     console.log('\nLogged in user_id:', foundUser.id);
     res.redirect('/protected');
@@ -161,6 +175,7 @@ app.post('/logout', (req, res) => {
   res.redirect('/login');
 });
 
+
 // GET /urls -Displays saved URLs.
 app.get('/urls', (req, res) => {
   const user_id = req.cookies['user_id'];
@@ -175,6 +190,7 @@ app.get('/urls', (req, res) => {
   const templateVars = { user, urls: userFilter };// render userFilter as urls in the template. So it only will have access to the values from userFilter.
   res.render('urls_index', templateVars);
 });
+
 
 // POST /urls
 app.post("/urls", (req, res) => {
@@ -200,6 +216,7 @@ app.post("/urls", (req, res) => {
   return;
 });
 
+
 // GET /urls/new
 app.get('/urls/new', (req, res) => {
   if (!loggedIn(req)) {
@@ -213,6 +230,7 @@ app.get('/urls/new', (req, res) => {
   res.render('urls_new', templateVars);
   return;
 });
+
 
 // GET /u/:id -Redirects a request for the shortened url to the matching longURL in the database.
 app.get('/u/:id', (req, res) => {
@@ -257,6 +275,7 @@ app.get('/urls/:id', (req, res) => {
   return;
 });
 
+
 // POST /urls/:id
 app.post('/urls/:id', (req, res) => {
 
@@ -280,6 +299,7 @@ app.post('/urls/:id', (req, res) => {
   res.redirect('/urls');
 
 });
+
 
 // POST /urls/:id/delete
 app.post('/urls/:id/delete', (req, res) => {
@@ -308,6 +328,7 @@ app.post('/urls/:id/delete', (req, res) => {
   res.redirect('/urls'); // redirect back to the URLs list
 });
 
+
 // GET /protected - only shows when user is logged in
 app.get('/protected', (req, res) => {
   const currentUser = req.cookies.user_id;
@@ -317,4 +338,4 @@ app.get('/protected', (req, res) => {
   const user = users[currentUser];
   const templateVars = { user };
   res.render('protected', templateVars);
-});//From Alvins Class
+}); //From Alvins Class
