@@ -1,18 +1,18 @@
 // Config
 const express = require('express'); // HTML library.
+const cookieParser = require('cookie-parser'); // Needed to read cookies.
 const app = express();
 const port = 8080;
-
+app.use(cookieParser()); // Set express app to use this library.
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true })); // Allow reading POST data.
 
-const cookieParser = require('cookie-parser'); // Needed to read cookies.
-app.use(cookieParser()); // Set express app to use this library.
+
+
 
 // Start
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-  console.log('\nNote that restarting the server does not seem to clear login cookie and can cause issues. If problem, try manually deleting the user_id cookie in the browser or log out before restarting.');
+  console.log(`Server running on port ${port}. \nNOTE: restarting does not clear the login cookie. Try manually deleting user_id cookie if problem.\n`);
 });
 
 
@@ -71,7 +71,7 @@ app.get('/register', (req, res) => {
     res.render('register', templateVars);
     return;
   }
-  console.log('\nDebug - Register Clicked but Already Logged In - Redirect');
+  console.log('\nDebug - Register clicked but already logged in - Redirect');
   res.redirect('/urls');
   return;
 });
@@ -118,7 +118,7 @@ app.get('/login', (req, res) => {
     res.render('login', templateVars);
     return;
   }
-  console.log('\nDebug - Login Clicked But Already Logged In - Redirect');
+  console.log('\nDebug - Login clicked but already logged in - Redirect');
   res.redirect('/urls');
   return;
 });
@@ -151,9 +151,6 @@ app.post('/login', (req, res) => {
         }, 4000);
       </script>
     `);
-  } else {
-    // Handle unexpected errors
-    res.status(500).send('Woopsies');
   }
 });
 
@@ -185,7 +182,7 @@ app.post("/urls", (req, res) => {
   // Protected Page - Check for User Login
 
   const currentUser = req.cookies.user_id;
-  if (!currentUser) {
+  if (!currentUser) { // If currentUser does not exist (nobody logged in)
     res.send('\nUser tried to post but was not logged in. Action was cancelled.');
     return;
   }
@@ -233,7 +230,7 @@ app.get('/u/:id', (req, res) => {
     `);
     return;
   }
-  const longURL = urlDatabase[req.params.id];
+  const longURL = urlDatabase[req.params.id].longURL;
   res.redirect(longURL);
   return;
 });
@@ -255,24 +252,58 @@ app.get('/urls/:id', (req, res) => {
   }
   const user_id = req.cookies['user_id'];
   const user = users[user_id];
-  const templateVars = { user, id: req.params.id, longURL: urlDatabase[req.params.id] };
+  const templateVars = { user, id: req.params.id, longURL: urlDatabase[req.params.id].longURL };
   res.render('urls_show', templateVars);
   return;
 });
 
 // POST /urls/:id
 app.post('/urls/:id', (req, res) => {
+
+  // Protected Page - Check for User Login
+
+  const currentUser = req.cookies.user_id;
+  if (!currentUser) { // If currentUser does not exist (nobody logged in)
+    res.send('\nUser tried to post but was not logged in. Action was cancelled.');
+    return;
+  }
+
   const id = req.params.id;
   const longURL = req.body.longURL;
   if (urlDatabase[id]) {
-    urlDatabase[id] = longURL;
+
+    urlDatabase[id] = {
+      longURL: longURL,
+      nestedObjectID: currentUser // Store the user ID as nestedObjectID
+    };
   }
   res.redirect('/urls');
+
 });
 
 // POST /urls/:id/delete
 app.post('/urls/:id/delete', (req, res) => {
+  // Protected Page - Check for User Login
+
+  const currentUser = req.cookies.user_id;
+
+  console.log('---curl delete attempt---');
+  console.log('curl found cookies:', req.cookies); // Debugging log
+  console.log('curl found user_id:', currentUser); // Debugging log
+  console.log('The curl command keeps saying no user is logged in. Not sure if this means the \'check for ownership of URL\' function will never run');
+
+  if (!currentUser) { // If currentUser does not exist (nobody logged in)
+    res.send('\nUser tried to delete but was not logged in. Action was cancelled.');
+    return;
+  }
+
   const id = req.params.id;
+  const urlEntry = urlDatabase[id];
+  // Check if the URL exists and if the current user is the owner
+  if (!urlEntry || urlEntry.nestedObjectID !== currentUser) {
+    res.send('\nUser tried to delete a URL they do not own. Action was cancelled.');
+    return;
+  }
   delete urlDatabase[id]; // delete the URL from the database
   res.redirect('/urls'); // redirect back to the URLs list
 });
@@ -280,8 +311,8 @@ app.post('/urls/:id/delete', (req, res) => {
 // GET /protected - only shows when user is logged in
 app.get('/protected', (req, res) => {
   const currentUser = req.cookies.user_id;
-  if (!currentUser) {
-    return res.redirect('/urls');
+  if (!currentUser) { // If currentUser does not exist (nobody logged in)
+    return res.redirect('/login');
   }
   const user = users[currentUser];
   const templateVars = { user };
