@@ -1,23 +1,30 @@
 // Config
 const express = require('express'); // HTML library.
-const cookieParser = require('cookie-parser'); // Needed to read cookies.
+// const cookieParser = require('cookie-parser'); // Needed to read cookies.
 const bcrypt = require("bcryptjs");
 const app = express();
 const port = 8080;
-app.use(cookieParser()); // Set express app to use this library.
+// app.use(cookieParser()); // Set express app to use this library.
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true })); // Allow reading POST data.
 
-// Start
-app.listen(port, () => {
-  console.log(`Server running on port ${port}. \nNote - restarting does not delete user_id cookie and may cause issues unless deleted or logged out.\n`);
-});
-
+const cookieSession = require('cookie-session');
 
 // (Global)Random String Generator
 const generateRandomString = function() {
   return Math.random().toString(36).substring(2, 8);
 };
+
+app.use(cookieSession({
+  name: 'session',
+  keys: [generateRandomString()],
+  maxAge: 24 * 60 * 60 * 1000
+}));
+
+// Start
+app.listen(port, () => {
+  console.log(`Server running on port ${port}. \nNote - may need to manually delete cookies and restart server if there are issues.\n`);
+});
 
 
 // (Global)URL Database
@@ -32,10 +39,8 @@ const urlDatabase = {
   },
 };
 
-
 // (Global)User Database
 const users = {};
-
 
 // (Global)Function register user/password and encrypt the password here at the source using hashSync.
 const register = (email, password) => {
@@ -51,32 +56,27 @@ const register = (email, password) => {
   return id;
 };
 
-
 // (Global)Function check email or password are empty before register
 function validateEmailPassword(email, password) {
   return email && password;
 }
-
 
 // (Global)Function to check if email is already in use before register
 function isEmailInUse(email) {
   return Object.values(users).some(user => user.email === email);
 }
 
-
 // (Global)Function check if user is logged in
 function loggedIn(req) {
-  return req.cookies.user_id ? true : false;
-} // returns true or false, by checking if user_id cookie exists. (req.cookies contains all the cookies sent from the client, and (req) lets the function look in the incoming request (req).
-
+  return req.session.user_id ? true : false;
+} // returns true or false, by checking if user_id session exists. (req.session contains all the session data sent from the client, and (req) lets the function look in the incoming request (req).
 
 // (Route Handlers)
-
 
 // GET /register
 app.get('/register', (req, res) => {
   if (!loggedIn(req)) {
-    const user_id = req.cookies['user_id'];
+    const user_id = req.session.user_id;
     const user = users[user_id];
     const templateVars = { user, urls: urlDatabase };
     res.render('register', templateVars);
@@ -86,7 +86,6 @@ app.get('/register', (req, res) => {
   res.redirect('/urls');
   return;
 });
-
 
 // POST /register
 app.post('/register', (req, res) => {
@@ -116,16 +115,15 @@ app.post('/register', (req, res) => {
   }
 
   const id = register(email, password);
-  res.cookie('user_id', id);
+  req.session.user_id = id; // Set session data
   console.log('\nRegistered user_id:', id);
   res.redirect('/urls');
 });
 
-
 // GET /login
 app.get('/login', (req, res) => {
   if (!loggedIn(req)) {
-    const user_id = req.cookies['user_id'];
+    const user_id = req.session.user_id;
     const user = users[user_id];
     const templateVars = { user, urls: urlDatabase };
     res.render('login', templateVars);
@@ -135,7 +133,6 @@ app.get('/login', (req, res) => {
   res.redirect('/urls');
   return;
 });
-
 
 // POST /login
 app.post('/login', (req, res) => {
@@ -151,8 +148,8 @@ app.post('/login', (req, res) => {
   }
 
   if (foundUser && bcrypt.compareSync(password, foundUser.password)) {
-    // If the user exists and the password is matching the bcrypt password, log them in, create a user_id cookie for them.
-    res.cookie('user_id', foundUser.id);
+    // If the user exists and the password is matching the bcrypt password, log them in, create a user_id session for them.
+    req.session.user_id = foundUser.id;
     console.log('\nLogged in user_id:', foundUser.id);
     res.redirect('/protected');
   } else if (!foundUser || foundUser.password !== password) {
@@ -168,17 +165,15 @@ app.post('/login', (req, res) => {
   }
 });
 
-
 // POST /logout
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id'); //clear the 'user_id' cookie
+  req.session = null; // Clear the session
   res.redirect('/login');
 });
 
-
 // GET /urls -Displays saved URLs.
 app.get('/urls', (req, res) => {
-  const user_id = req.cookies['user_id'];
+  const user_id = req.session.user_id;
   const user = users[user_id];
 
   const userFilter = {}; // Loop through the urlDatabase {}
@@ -191,13 +186,10 @@ app.get('/urls', (req, res) => {
   res.render('urls_index', templateVars);
 });
 
-
 // POST /urls
 app.post("/urls", (req, res) => {
-
   // Protected Page - Check for User Login
-
-  const currentUser = req.cookies.user_id;
+  const currentUser = req.session.user_id;
   if (!currentUser) { // If currentUser does not exist (nobody logged in)
     res.send('\nUser tried to post but was not logged in. Action was cancelled.');
     return;
@@ -210,12 +202,11 @@ app.post("/urls", (req, res) => {
     longURL: longURL,
     nestedObjectID: currentUser // Store the user ID as nestedObjectID
   };
-  //Note: id is refered to shortURL in other functions, but it is the same due to the structure of the urlDatabase Object (may update later)
+  //Note: id is referred to shortURL in other functions, but it is the same due to the structure of the urlDatabase Object (may update later)
 
   res.redirect(`/urls/${id}`);
   return;
 });
-
 
 // GET /urls/new
 app.get('/urls/new', (req, res) => {
@@ -224,17 +215,15 @@ app.get('/urls/new', (req, res) => {
     res.redirect('/login');
     return;
   }
-  const user_id = req.cookies['user_id'];
+  const user_id = req.session.user_id;
   const user = users[user_id];
   const templateVars = { user };
   res.render('urls_new', templateVars);
   return;
 });
 
-
 // GET /u/:id -Redirects a request for the shortened url to the matching longURL in the database.
 app.get('/u/:id', (req, res) => {
-
   // Check if url exists or not
   const id = req.params.id;
   if (!urlDatabase[id]) {
@@ -253,6 +242,7 @@ app.get('/u/:id', (req, res) => {
   return;
 });
 
+
 // GET /urls/:id -Route parameter for any & all 'id'.
 app.get('/urls/:id', (req, res) => {
   // Check if url exists or not
@@ -268,20 +258,17 @@ app.get('/urls/:id', (req, res) => {
     `);
     return;
   }
-  const user_id = req.cookies['user_id'];
+  const user_id = req.session.user_id; // Use session data
   const user = users[user_id];
   const templateVars = { user, id: req.params.id, longURL: urlDatabase[req.params.id].longURL };
   res.render('urls_show', templateVars);
   return;
 });
 
-
 // POST /urls/:id
 app.post('/urls/:id', (req, res) => {
-
   // Protected Page - Check for User Login
-
-  const currentUser = req.cookies.user_id;
+  const currentUser = req.session.user_id; // Use session data
   if (!currentUser) { // If currentUser does not exist (nobody logged in)
     res.send('\nUser tried to post but was not logged in. Action was cancelled.');
     return;
@@ -290,25 +277,21 @@ app.post('/urls/:id', (req, res) => {
   const id = req.params.id;
   const longURL = req.body.longURL;
   if (urlDatabase[id]) {
-
     urlDatabase[id] = {
       longURL: longURL,
       nestedObjectID: currentUser // Store the user ID as nestedObjectID
     };
   }
   res.redirect('/urls');
-
 });
-
 
 // POST /urls/:id/delete
 app.post('/urls/:id/delete', (req, res) => {
   // Protected Page - Check for User Login
-
-  const currentUser = req.cookies.user_id;
+  const currentUser = req.session.user_id; // Use session data
 
   console.log('---curl delete attempt---');
-  console.log('curl found cookies:', req.cookies); // Debugging log
+  console.log('curl found cookies:', req.session); // Debugging log
   console.log('curl found user_id:', currentUser); // Debugging log
   console.log('The curl command keeps saying no user is logged in. Not sure if this means the \'check for ownership of URL\' function will never run');
 
@@ -328,14 +311,13 @@ app.post('/urls/:id/delete', (req, res) => {
   res.redirect('/urls'); // redirect back to the URLs list
 });
 
-
 // GET /protected - only shows when user is logged in
 app.get('/protected', (req, res) => {
-  const currentUser = req.cookies.user_id;
+  const currentUser = req.session.user_id; // Use session data
   if (!currentUser) { // If currentUser does not exist (nobody logged in)
     return res.redirect('/login');
   }
   const user = users[currentUser];
   const templateVars = { user };
   res.render('protected', templateVars);
-}); //From Alvins Class
+});
