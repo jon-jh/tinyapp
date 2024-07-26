@@ -172,17 +172,23 @@ app.post('/logout', (req, res) => {
 });
 
 // GET /urls -Displays saved URLs.
+// Helper function
+const urlsForUser = (user_id, urlDatabase) => {
+  const userFilter = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].nestedObjectID === user_id) {
+      userFilter[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userFilter;
+};
+
+// Route handler
 app.get('/urls', (req, res) => {
   const user_id = req.session.user_id;
   const user = users[user_id];
-
-  const userFilter = {}; // Loop through the urlDatabase {}
-  for (const shortURL in urlDatabase) { // Within urlDatabase
-    if (urlDatabase[shortURL].nestedObjectID === user_id) { // If found matching ID
-      userFilter[shortURL] = urlDatabase[shortURL]; // Send it to userFilter {}
-    } // userFilter will be an object only containing the logged in users URLs.
-  }
-  const templateVars = { user, urls: userFilter };// render userFilter as urls in the template. So it only will have access to the values from userFilter.
+  const userFilter = urlsForUser(user_id, urlDatabase); // Use the helper function
+  const templateVars = { user, urls: userFilter };
   res.render('urls_index', templateVars);
 });
 
