@@ -4,8 +4,8 @@ TinyApp is a full stack web application built with Node and Express that allows 
 
 ## Final Product
 
-!["screenshot description"](#)
-!["screenshot description"](#)
+!["Register page with menu bar on top"](https://github.com/jon-jh/tinyapp/blob/main/docs/menu-bar.png?raw=true)
+!["Expanded menu bar for smaller screen"](https://github.com/jon-jh/tinyapp/blob/main/docs/menu-expanded.png?raw=true)
 
 ## Dependencies
 
