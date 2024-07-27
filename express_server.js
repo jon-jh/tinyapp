@@ -1,78 +1,30 @@
-// Config
 const express = require('express'); // HTML library.
-// const cookieParser = require('cookie-parser'); // Needed to read cookies.
 const bcrypt = require("bcryptjs");
-const app = express();
-const port = 8080;
-// app.use(cookieParser()); // Set express app to use this library.
-app.set('view engine', 'ejs');
-app.use(express.urlencoded({ extended: true })); // Allow reading POST data.
+
+const { urlsForUser, getUserByEmail, register, validateEmailPassword, isEmailInUse, loggedIn, generateRandomString } = require('./helpers');
+const { urlDatabase, users } = require('./database');
 
 const cookieSession = require('cookie-session');
+const app = express();
+const port = 8080;
 
-// (Global)Random String Generator
-const generateRandomString = function() {
-  return Math.random().toString(36).substring(2, 8);
-};
+// Config
 
+app.set('view engine', 'ejs');
+app.use(express.urlencoded({ extended: true })); // Allow reading POST data.
 app.use(cookieSession({
   name: 'session',
   keys: [generateRandomString()],
   maxAge: 24 * 60 * 60 * 1000
 }));
 
-// Start
+// Start Server
 app.listen(port, () => {
   console.log(`Server running on port ${port}. \nNote - may need to manually delete cookies and restart server if there are issues.\n`);
 });
 
 
-// (Global)URL Database
-const urlDatabase = {
-  b6UTxQ: {
-    longURL: "https://www.tsn.ca",
-    nestedObjectID: "rvdedt",
-  },
-  i3BoGr: {
-    longURL: "https://www.google.ca",
-    nestedObjectID: "rvdedt",
-  },
-};
-
-// (Global)User Database
-const users = {};
-
-// (Global)Function register user/password and encrypt the password here at the source using hashSync.
-const register = (email, password) => {
-  const id = generateRandomString();
-  const hashedPassword = bcrypt.hashSync(password, 10); // use hashSync
-  users[id] = {
-    id,
-    email,
-    password: hashedPassword
-  };
-  // Encrypted password check
-  console.log(users);
-  return id;
-};
-
-// (Global)Function check email or password are empty before register
-function validateEmailPassword(email, password) {
-  return email && password;
-}
-
-// (Global)Function to check if email is already in use before register
-function isEmailInUse(email) {
-  return Object.values(users).some(user => user.email === email);
-}
-
-// (Global)Function check if user is logged in
-function loggedIn(req) {
-  return req.session.user_id ? true : false;
-} // returns true or false, by checking if user_id session exists. (req.session contains all the session data sent from the client, and (req) lets the function look in the incoming request (req).
-
-// (Route Handlers)
-
+// Route Handlers
 // GET /register
 app.get('/register', (req, res) => {
   if (!loggedIn(req)) {
@@ -87,10 +39,10 @@ app.get('/register', (req, res) => {
   return;
 });
 
+
 // POST /register
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
-
   if (!validateEmailPassword(email, password)) {
     return res.status(400).send(`
         <p>The fields can not be empty. Redirecting!</p>
@@ -101,9 +53,8 @@ app.post('/register', (req, res) => {
         </script>
       `);
   }
-
   // Check if email is already in use
-  if (isEmailInUse(email)) {
+  if (isEmailInUse(email, users)) {
     return res.status(400).send(`
         <p>That email is already registered. Redirecting!</p>
         <script>
@@ -113,12 +64,11 @@ app.post('/register', (req, res) => {
         </script>
       `);
   }
-
-  const id = register(email, password);
-  req.session.user_id = id; // Set session data
-  console.log('\nRegistered user_id:', id);
-  res.redirect('/urls');
+  const userId = register(email, password, users, generateRandomString);
+  req.session.user_id = userId;
+  res.redirect('/protected');
 });
+
 
 // GET /login
 app.get('/login', (req, res) => {
@@ -134,19 +84,13 @@ app.get('/login', (req, res) => {
   return;
 });
 
+
 // POST /login
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-
-  // Find the user by email
-  let foundUser = null;
-  for (const user in users) {
-    if (users[user].email === email) {
-      foundUser = users[user];
-      break;
-    }
-  }
-
+  // Use new helper function
+  const foundUser = getUserByEmail(email);
+  // Resume as before without changing foundUser
   if (foundUser && bcrypt.compareSync(password, foundUser.password)) {
     // If the user exists and the password is matching the bcrypt password, log them in, create a user_id session for them.
     req.session.user_id = foundUser.id;
@@ -165,25 +109,15 @@ app.post('/login', (req, res) => {
   }
 });
 
+
 // POST /logout
 app.post('/logout', (req, res) => {
   req.session = null; // Clear the session
   res.redirect('/login');
 });
 
-// GET /urls -Displays saved URLs.
-// Helper function
-const urlsForUser = (user_id, urlDatabase) => {
-  const userFilter = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].nestedObjectID === user_id) {
-      userFilter[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userFilter;
-};
 
-// Route handler
+// GET /urls -Displays saved URLs.
 app.get('/urls', (req, res) => {
   const user_id = req.session.user_id;
   const user = users[user_id];
@@ -191,6 +125,7 @@ app.get('/urls', (req, res) => {
   const templateVars = { user, urls: userFilter };
   res.render('urls_index', templateVars);
 });
+
 
 // POST /urls
 app.post("/urls", (req, res) => {
@@ -200,19 +135,16 @@ app.post("/urls", (req, res) => {
     res.send('\nUser tried to post but was not logged in. Action was cancelled.');
     return;
   }
-
   const longURL = req.body.longURL;// For the key:value pairs in urlDatabase, id = key, req.body.longURL = value.
   const id = generateRandomString(); // Now the id is a random number with the value being the longURL.
-  // urlDatabase[id] = longURL; (replaced)
   urlDatabase[id] = {
     longURL: longURL,
     nestedObjectID: currentUser // Store the user ID as nestedObjectID
   };
-  //Note: id is referred to shortURL in other functions, but it is the same due to the structure of the urlDatabase Object (may update later)
-
   res.redirect(`/urls/${id}`);
   return;
 });
+
 
 // GET /urls/new
 app.get('/urls/new', (req, res) => {
@@ -228,9 +160,10 @@ app.get('/urls/new', (req, res) => {
   return;
 });
 
+
 // GET /u/:id -Redirects a request for the shortened url to the matching longURL in the database.
 app.get('/u/:id', (req, res) => {
-  // Check if url exists or not
+  // Check if url exists.
   const id = req.params.id;
   if (!urlDatabase[id]) {
     res.status(403).send(`
@@ -251,7 +184,7 @@ app.get('/u/:id', (req, res) => {
 
 // GET /urls/:id -Route parameter for any & all 'id'.
 app.get('/urls/:id', (req, res) => {
-  // Check if url exists or not
+  // Check if url exists.
   const id = req.params.id;
   if (!urlDatabase[id]) {
     res.status(403).send(`
@@ -271,6 +204,7 @@ app.get('/urls/:id', (req, res) => {
   return;
 });
 
+
 // POST /urls/:id
 app.post('/urls/:id', (req, res) => {
   // Protected Page - Check for User Login
@@ -279,7 +213,6 @@ app.post('/urls/:id', (req, res) => {
     res.send('\nUser tried to post but was not logged in. Action was cancelled.');
     return;
   }
-
   const id = req.params.id;
   const longURL = req.body.longURL;
   if (urlDatabase[id]) {
@@ -290,6 +223,7 @@ app.post('/urls/:id', (req, res) => {
   }
   res.redirect('/urls');
 });
+
 
 // POST /urls/:id/delete
 app.post('/urls/:id/delete', (req, res) => {
@@ -316,6 +250,7 @@ app.post('/urls/:id/delete', (req, res) => {
   delete urlDatabase[id]; // delete the URL from the database
   res.redirect('/urls'); // redirect back to the URLs list
 });
+
 
 // GET /protected - only shows when user is logged in
 app.get('/protected', (req, res) => {
