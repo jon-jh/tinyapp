@@ -1,6 +1,6 @@
 const { assert } = require('chai');
+const { getUserByEmail, urlsForUser } = require('../helpers.js');
 
-const { getUserByEmail } = require('../helpers.js');
 
 const testUsers = {
   "userRandomID": {
@@ -27,15 +27,6 @@ describe('getUserByEmail', function() {
   });
 });
 
-const urlsForUser = (user_id, urlDatabase) => {
-  const userFilter = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].nestedObjectID === user_id) {
-      userFilter[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userFilter;
-};
 
 const testUrlDatabase = {
   "b2xVn2": { nestedObjectID: "userRandomID", longURL: "http://www.lighthouselabs.ca" },
