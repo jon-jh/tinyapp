@@ -36,7 +36,6 @@ const register = (email, password, users, generateRandomString) => {
     email,
     password: hashedPassword
   };
-  console.log(users);
   return id;
 };
 

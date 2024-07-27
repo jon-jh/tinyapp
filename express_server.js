@@ -233,7 +233,7 @@ app.post('/urls/:id/delete', (req, res) => {
   console.log('---curl delete attempt---');
   console.log('curl found cookies:', req.session); // Debugging log
   console.log('curl found user_id:', currentUser); // Debugging log
-  console.log('The curl command keeps saying no user is logged in. Not sure if this means the \'check for ownership of URL\' function will never run');
+  console.log('The curl command is not reading the cookies - may never get to check if the user owns the url');
 
   if (!currentUser) { // If currentUser does not exist (nobody logged in)
     res.send('\nUser tried to delete but was not logged in. Action was cancelled.');
