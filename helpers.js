@@ -25,7 +25,7 @@ function getUserByEmail(email, users) {
     }
   }
   return null;
-};
+}
 
 // Function to register user and encrypt the password
 const register = (email, password, users, generateRandomString) => {
