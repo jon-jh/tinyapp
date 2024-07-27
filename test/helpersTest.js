@@ -21,4 +21,8 @@ describe('getUserByEmail', function() {
     const expectedUserID = "userRandomID";
     assert.strictEqual(user.id, expectedUserID);
   });
+  it('should return undefined with an invalid email', function() {
+    const user = getUserByEmail("nonnonbiyori@example.com", testUsers);
+    assert.isUndefined(user);
+  });
 });

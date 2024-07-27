@@ -24,7 +24,7 @@ function getUserByEmail(email, users) {
       return users[user];
     }
   }
-  return null;
+  return undefined;
 }
 
 // Function to register user and encrypt the password
