@@ -13,7 +13,7 @@
 
         <td>
           <% if (user) { %>
-            <form method="post" action="/logout" style="display: flex; align-items: center;">
+            <form method="get" action="/logout" style="display: flex; align-items: center;">
               <label style="margin-left: 10px;">Logged in as '<%= user.email %>' </label>
               <button type="submit">Logout</button>
             </form>

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+    integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous" />
+
+  <title>TinyApp</title>
+</head>
+
+<body>
+  <!-- Add include ejs statement for the partial header-->
+  <%- include('partials/_header') %>
+    <!-- End header insertion section-->
+    <h3>Log in to your account to create and use your very own short URLs.</h3>
+    <!-- Message / Buttons to Register or Login if not already -->
+    <button id="registerButton" class="btn btn-primary">Go to Register</button>
+    <button id="loginButton" class="btn btn-primary">Go to Login</button>
+    <script>
+      document.getElementById('registerButton').addEventListener('click', function() {
+        window.location.href = '/register';
+      });
+      document.getElementById('loginButton').addEventListener('click', function() {
+        window.location.href = '/login';
+      });
+    </script>
+</body>
+
+</html>

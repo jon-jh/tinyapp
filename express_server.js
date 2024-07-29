@@ -1,27 +1,38 @@
-const express = require('express'); // HTML library.
-const bcrypt = require("bcryptjs");
-
-const { urlsForUser, getUserByEmail, register, validateEmailPassword, isEmailInUse, loggedIn, generateRandomString } = require('./helpers');
-const { urlDatabase, users } = require('./database');
-
+const express = require('express');
+const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
+
+const { urlDatabase, users } = require('./database');
+const {
+  urlsForUser,
+  getUserByEmail,
+  register,
+  validateEmailPassword,
+  isEmailInUse,
+  loggedIn,
+  generateRandomString,
+} = require('./helpers');
+const {
+  notFoundResponse,
+  newUserResponse,
+  emailInUseResponse,
+  cantBeEmptyResponse,
+} = require('./response');
+
 const app = express();
 const port = 8080;
 
-// Config
-
+// Configuration
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true })); // Allow reading POST data.
 app.use(cookieSession({
   name: 'session',
   keys: [generateRandomString()],
-  maxAge: 24 * 60 * 60 * 1000
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
 }));
 
-// Start Server
-app.listen(port, () => {
-  console.log(`Server running on port ${port}. \nNote - may need to manually delete cookies and restart server if there are issues.\n`);
-});
+
+//---------------
 
 
 // Route Handlers
@@ -34,9 +45,8 @@ app.get('/register', (req, res) => {
     res.render('register', templateVars);
     return;
   }
-  console.log('\nDebug - Register clicked but already logged in - Redirect');
+  console.log('redirect');
   res.redirect('/urls');
-  return;
 });
 
 
@@ -44,25 +54,11 @@ app.get('/register', (req, res) => {
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
   if (!validateEmailPassword(email, password)) {
-    return res.status(400).send(`
-        <p>The fields can not be empty. Redirecting!</p>
-        <script>
-          setTimeout(() => {
-            window.location.href = '/register';
-          }, 4000);
-        </script>
-      `);
+    cantBeEmptyResponse;
   }
   // Check if email is already in use
   if (isEmailInUse(email, users)) {
-    return res.status(400).send(`
-        <p>That email is already registered. Redirecting!</p>
-        <script>
-          setTimeout(() => {
-            window.location.href = '/register';
-          }, 4000);
-        </script>
-      `);
+    emailInUseResponse;
   }
   const userId = register(email, password, users, generateRandomString);
   req.session.user_id = userId;
@@ -79,46 +75,41 @@ app.get('/login', (req, res) => {
     res.render('login', templateVars);
     return;
   }
-  console.log('\nDebug - Login clicked but already logged in - Redirect');
   res.redirect('/urls');
-  return;
 });
 
 
 // POST /login
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  // Use new helper function
-  const foundUser = getUserByEmail(email);
-  // Resume as before without changing foundUser
+  const foundUser = getUserByEmail(email, users);
+
   if (foundUser && bcrypt.compareSync(password, foundUser.password)) {
-    // If the user exists and the password is matching the bcrypt password, log them in, create a user_id session for them.
+    // If the user exists and the password matches, log them in and create a session
     req.session.user_id = foundUser.id;
-    console.log('\nLogged in user_id:', foundUser.id);
+    console.log(`${foundUser.id} logged in`);
     res.redirect('/protected');
-  } else if (!foundUser || foundUser.password !== password) {
-    // If the user doesn't exist or the password does not match the user, show an error and redirect
-    res.status(403).send(`
-      <p>Wrong Username or Password. Redirecting!</p>
-      <script>
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 4000);
-      </script>
-    `);
+  } else {
+    // If the user doesn't exist or the password doesn't match, show an error and redirect
+    return newUserResponse(res);
   }
 });
 
 
-// POST /logout
-app.post('/logout', (req, res) => {
+// GET /logout - using POST actually broke this, would not let user log in again after logging out.
+
+
+app.get('/logout', (req, res) => {
   req.session = null; // Clear the session
-  res.redirect('/login');
+  res.redirect('/login'); // Redirect to login page after logout
 });
 
 
-// GET /urls -Displays saved URLs.
+// GET /urls - Displays saved URLs
 app.get('/urls', (req, res) => {
+  if (!loggedIn(req)) {
+    return res.redirect('/trylogin');
+  }
   const user_id = req.session.user_id;
   const user = users[user_id];
   const userFilter = urlsForUser(user_id, urlDatabase); // Use the helper function
@@ -127,98 +118,85 @@ app.get('/urls', (req, res) => {
 });
 
 
+// GET /trylogin
+app.get('/trylogin', (req, res) => {
+  const user_id = req.session.user_id;
+  const user = users[user_id];
+  const templateVars = { user, urls: urlDatabase };
+  res.render('trylogin', templateVars);
+});
+
+
 // POST /urls
-app.post("/urls", (req, res) => {
+app.post('/urls', (req, res) => {
   // Protected Page - Check for User Login
   const currentUser = req.session.user_id;
   if (!currentUser) { // If currentUser does not exist (nobody logged in)
-    res.send('\nUser tried to post but was not logged in. Action was cancelled.');
-    return;
+    return res.send('\nTried to post but was not logged in. Action was cancelled.');
   }
-  const longURL = req.body.longURL;// For the key:value pairs in urlDatabase, id = key, req.body.longURL = value.
+  const longURL = req.body.longURL; // For the key:value pairs in urlDatabase, id = key, req.body.longURL = value.
   const id = generateRandomString(); // Now the id is a random number with the value being the longURL.
   urlDatabase[id] = {
     longURL: longURL,
     nestedObjectID: currentUser // Store the user ID as nestedObjectID
   };
   res.redirect(`/urls/${id}`);
-  return;
 });
 
 
 // GET /urls/new
 app.get('/urls/new', (req, res) => {
   if (!loggedIn(req)) {
-    console.log('\nDebug - Tried urls/new but not logged in - Redirect to Login');
-    res.redirect('/login');
-    return;
+    return res.redirect('/trylogin');
   }
   const user_id = req.session.user_id;
   const user = users[user_id];
   const templateVars = { user };
   res.render('urls_new', templateVars);
-  return;
 });
 
 
-// GET /u/:id -Redirects a request for the shortened url to the matching longURL in the database.
+// GET /u/:id - Redirects a click on a shortened URL to the normal website
 app.get('/u/:id', (req, res) => {
-  // Check if url exists.
   const id = req.params.id;
   if (!urlDatabase[id]) {
-    res.status(403).send(`
-      <p>Not found in your database. Redirecting!</p>
-      <script>
-        setTimeout(() => {
-          window.location.href = '/urls';
-        }, 4000);
-      </script>
-    `);
-    return;
+    return notFoundResponse(res);
   }
-  const longURL = urlDatabase[req.params.id].longURL;
+  const longURL = urlDatabase[id].longURL;
   res.redirect(longURL);
-  return;
 });
 
 
-// GET /urls/:id -Route parameter for any & all 'id'.
+// GET /urls/:id - Route parameter for any & all 'id'
 app.get('/urls/:id', (req, res) => {
-  // Check if url exists.
   const id = req.params.id;
-  if (!urlDatabase[id]) {
-    res.status(403).send(`
-      <p>Not found in your database. Redirecting!</p>
-      <script>
-        setTimeout(() => {
-          window.location.href = '/urls';
-        }, 4000);
-      </script>
-    `);
-    return;
+  if (!loggedIn(req)) {
+    return res.redirect('/trylogin');
   }
-  const user_id = req.session.user_id; // Use session data
-  const user = users[user_id];
-  const templateVars = { user, id: req.params.id, longURL: urlDatabase[req.params.id].longURL };
+
+  const currentUser = req.session.user_id;
+  const urlEntry = urlDatabase[id];
+  if (!urlDatabase[id] || !urlEntry || urlEntry.nestedObjectID !== currentUser) {
+    return notFoundResponse(res);
+  }
+  const user = users[currentUser];
+  const templateVars = { user, id, longURL: urlDatabase[id].longURL };
   res.render('urls_show', templateVars);
-  return;
 });
 
 
 // POST /urls/:id
 app.post('/urls/:id', (req, res) => {
-  // Protected Page - Check for User Login
-  const currentUser = req.session.user_id; // Use session data
-  if (!currentUser) { // If currentUser does not exist (nobody logged in)
-    res.send('\nUser tried to post but was not logged in. Action was cancelled.');
-    return;
+  const currentUser = req.session.user_id;
+  if (!currentUser) {
+    return res.send('\nTried to post but was not logged in. Action was cancelled.');
   }
   const id = req.params.id;
   const longURL = req.body.longURL;
   if (urlDatabase[id]) {
     urlDatabase[id] = {
-      longURL: longURL,
-      nestedObjectID: currentUser // Store the user ID as nestedObjectID
+      longURL,
+      nestedObjectID: currentUser
     };
   }
   res.redirect('/urls');
@@ -230,13 +208,8 @@ app.post('/urls/:id/delete', (req, res) => {
   // Protected Page - Check for User Login
   const currentUser = req.session.user_id; // Use session data
 
-  console.log('---curl delete attempt---');
-  console.log('curl found cookies:', req.session); // Debugging log
-  console.log('curl found user_id:', currentUser); // Debugging log
-  console.log('The curl command is not reading the cookies - may never get to check if the user owns the url');
-
   if (!currentUser) { // If currentUser does not exist (nobody logged in)
-    res.send('\nUser tried to delete but was not logged in. Action was cancelled.');
+    res.send('\n---curl delete attempt---');
     return;
   }
 
@@ -261,4 +234,19 @@ app.get('/protected', (req, res) => {
   const user = users[currentUser];
   const templateVars = { user };
   res.render('protected', templateVars);
+});
+
+
+// GET /
+app.get('/', (req, res) => {
+  const currentUser = req.session.user_id; // Use session data
+  if (!currentUser) { // If currentUser does not exist (nobody logged in)
+    return res.redirect('/trylogin');
+  }
+});
+
+
+// Start Server
+app.listen(port, () => {
+  console.log(`Server running on port ${port}. \nNote - may need to manually delete cookies and restart server if there are issues.\n`);
 });

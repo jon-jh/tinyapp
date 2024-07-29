@@ -10,7 +10,9 @@ const urlDatabase = {
   },
 };
 
-// User Database
+
+// Global User Database
 const users = {};
+
 
 module.exports = {urlDatabase, users};
